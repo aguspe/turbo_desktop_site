@@ -1,0 +1,7 @@
+services:
+  - type: web
+    runtime: static
+    name: turbo-desktop-site
+    buildCommand: ""
+    staticPublishPath: .
+    autoDeploy: true
