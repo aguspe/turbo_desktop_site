@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Turbo Desktop &mdash; Turbo Native, for the desktop</title>
+<meta name="description" content="Turbo Desktop wraps your Rails app in a thin native shell built on Tauri 2 — path configuration, bridge components, and progressive enhancement on macOS, Windows, and Linux.">
+<link rel="icon" type="image/png" href="assets/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="brand">
+    <img src="assets/logo.png" alt="Turbo Desktop">
+    <span class="name">Turbo Desktop</span>
+    <span class="version">v0.0.1</span>
+  </div>
+  <div class="spacer"></div>
+  <nav>
+    <a href="https://github.com/aguspe/turbo_desktop" target="_blank" rel="noopener">GitHub</a>
+    <button class="theme-toggle" id="theme-toggle" type="button">Light</button>
+  </nav>
+</header>
+
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="nav-group">
+      <div class="nav-group-title">Getting started</div>
+      <div class="nav-group-items">
+        <a class="nav-link" href="#overview">Overview</a>
+        <a class="nav-link" href="#quick-start">Quick start</a>
+      </div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-title">Core concepts</div>
+      <div class="nav-group-items">
+        <a class="nav-link" href="#path-config">Path configuration</a>
+        <a class="nav-link" href="#bridge">Bridge components</a>
+        <a class="nav-link" href="#inspector">Dev Inspector</a>
+      </div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-title">Reference</div>
+      <div class="nav-group-items">
+        <a class="nav-link" href="#rails-gem">Rails gem</a>
+        <a class="nav-link" href="#js-api">JavaScript API</a>
+        <a class="nav-link" href="#cli">CLI</a>
+        <a class="nav-link" href="#comparison">Comparison</a>
+      </div>
+    </div>
+    <div class="sidebar-callout">
+      <div class="t">Coming from mobile?</div>
+      <div class="b">If you have shipped a turbo-ios or turbo-android app, everything here will feel familiar.</div>
+      <a href="#quick-start">Start in five minutes &rarr;</a>
+    </div>
+  </aside>
+
+  <main id="td-article" class="article-scroll">
+    <div class="container">
+      <div class="article">
+
+        <section id="overview">
+          <div class="pill">Handbook</div>
+          <h1>Turbo Native, for the desktop</h1>
+          <p class="lede">Your Rails app is already the source of truth. Turbo Desktop wraps it in a thin native shell built on Tauri 2 &mdash; the same path configuration, bridge components, and progressive enhancement you know from Hotwire Native, now on macOS, Windows, and Linux.</p>
+
+          <div class="cta-row">
+            <a class="btn-primary" href="#quick-start">Quick start</a>
+            <a class="btn-secondary" href="https://github.com/aguspe/turbo_desktop" target="_blank" rel="noopener">View source</a>
+          </div>
+
+          <div class="layers">
+            <div class="layers-title">Three layers</div>
+            <div class="layers-grid">
+              <div class="layer-card">
+                <div class="num">01</div>
+                <div class="t">Rails server</div>
+                <div class="b">HTML over the wire, Turbo Drive, Stimulus</div>
+              </div>
+              <div class="layer-wire">
+                <div class="line"></div>
+                <div class="dot" style="background:var(--coral)"></div>
+              </div>
+              <div class="layer-card" style="animation-delay:.8s">
+                <div class="num">02</div>
+                <div class="t">WebView</div>
+                <div class="b">turbo-desktop.js intercepts every visit</div>
+              </div>
+              <div class="layer-wire">
+                <div class="line"></div>
+                <div class="dot" style="background:var(--pink);animation-delay:1.4s"></div>
+              </div>
+              <div class="layer-card" style="animation-delay:1.6s">
+                <div class="num">03</div>
+                <div class="t">Tauri shell</div>
+                <div class="b">Rust handles windows, menus, OS APIs</div>
+              </div>
+            </div>
+          </div>
+
+          <h2 class="sub">Why it exists</h2>
+          <p class="intro" style="margin-bottom:22px">Rails developers have had turbo-ios and turbo-android for years. Desktop was the gap. Turbo Desktop fills it without asking you to learn a new UI framework: your existing views, frames, and controllers keep working, and you reach for native only where it pays off.</p>
+
+          <div class="card-grid">
+            <div class="card"><div class="t">No new UI framework</div><div class="b">Rails views, Turbo Frames, and Stimulus controllers work unchanged.</div></div>
+            <div class="card"><div class="t">5&ndash;10 MB binaries</div><div class="b">Tauri uses the OS WebView. No bundled Chromium to ship.</div></div>
+            <div class="card"><div class="t">Native where it counts</div><div class="b">Notifications, menus, file pickers, shortcuts, and badges via the Bridge.</div></div>
+            <div class="card"><div class="t">Server-driven routing</div><div class="b">Path configuration is JSON served by Rails &mdash; change it without a rebuild.</div></div>
+          </div>
+        </section>
+
+        <section id="quick-start">
+          <h2>Quick start</h2>
+          <p class="intro" style="margin-bottom:30px">Four steps from an existing Rails app to a running desktop shell. You need Rails 7+, Ruby 3.1+, and a Rust toolchain.</p>
+
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <h3>Scaffold the shell</h3>
+              <div class="code">
+                <button class="copy-btn" type="button">copy</button>
+                <pre data-lang="bash">npx turbo-desktop new myapp
+cd myapp &amp;&amp; npm install
+cargo install tauri-cli</pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <h3>Point it at your Rails server</h3>
+              <div class="file-label">turbo-desktop.config.json</div>
+              <div class="code">
+                <button class="copy-btn" type="button">copy</button>
+                <pre data-lang="json">{
+  "server_url": "http://localhost:3000",
+  "app_name": "My App",
+  "path_configuration_url": "http://localhost:3000/turbo-desktop/path-configuration.json"
+}</pre>
+              </div>
+              <p class="note">Leave <code class="inline">path_configuration_url</code> out and it defaults to <code class="inline">{server_url}/turbo-desktop/path-configuration.json</code>.</p>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <h3>Teach Rails about the shell</h3>
+              <div class="tab-row" data-tabs="qs">
+                <button class="tab-btn active" type="button" data-tab="ruby">Ruby</button>
+                <button class="tab-btn" type="button" data-tab="erb">ERB</button>
+                <button class="tab-btn" type="button" data-tab="js">JS</button>
+              </div>
+              <div class="code active" data-panel="qs:ruby">
+                <button class="copy-btn" type="button">copy</button>
+                <pre data-lang="ruby"># Gemfile
+gem "turbo_desktop-rails"
+
+# bundle install
+# rails generate turbo_desktop:install
+
+# config/routes.rb
+get "/turbo-desktop/path-configuration",
+    to: "turbo_desktop#path_configuration"</pre>
+              </div>
+              <div class="code" data-panel="qs:erb">
+                <button class="copy-btn" type="button">copy</button>
+                <pre data-lang="erb">&lt;%# app/views/layouts/application.html.erb %&gt;
+&lt;% turbo_desktop_only do %&gt;
+  &lt;div class="titlebar-drag-region"&gt;&lt;/div&gt;
+&lt;% end %&gt;
+
+&lt;% turbo_web_only do %&gt;
+  &lt;nav class="web-navbar"&gt;...&lt;/nav&gt;
+&lt;% end %&gt;</pre>
+              </div>
+              <div class="code" data-panel="qs:js">
+                <button class="copy-btn" type="button">copy</button>
+                <pre data-lang="js">// app/javascript/application.js
+if (window.TurboDesktop?.isNative) {
+  document.documentElement.dataset.shell = "desktop"
+}</pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <h3>Run both processes</h3>
+              <div class="code">
+                <button class="copy-btn" type="button">copy</button>
+                <pre data-lang="bash">bin/rails server      # your app
+cargo tauri dev       # the shell</pre>
+              </div>
+              <p class="note">The window opens on your <code class="inline">server_url</code>. Every Turbo visit from here on is proposed to the shell before it happens.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="path-config">
+          <h2>Path configuration</h2>
+          <p class="intro">A JSON document, served by Rails, that maps URL patterns to presentation rules. Same concept and the same last-match-wins semantics as turbo-ios and turbo-android &mdash; the shell stays dumb, your server decides how screens appear.</p>
+
+          <div class="code mb-36">
+            <button class="copy-btn" type="button">copy</button>
+            <pre data-lang="json">{
+  "settings": { "screenshots_enabled": true },
+  "rules": [
+    { "patterns": ["/"],               "properties": { "presentation": "default" } },
+    { "patterns": ["/new$", "/edit$"], "properties": { "presentation": "modal", "title": "Edit" } },
+    { "patterns": ["/reports/"],       "properties": { "presentation": "new_window" } },
+    { "patterns": ["/settings"],       "properties": { "presentation": "native" } }
+  ]
+}</pre>
+          </div>
+
+          <h3>See each presentation</h3>
+          <p class="pres-intro">Pick a rule to watch what the shell does with the window.</p>
+
+          <div class="pres-modes" id="pres-modes"></div>
+
+          <div class="demo-frame">
+            <div class="demo-window" id="demo-window" data-pres="modal">
+              <div class="demo-titlebar">
+                <div class="dot" style="background:#F4753F"></div>
+                <div class="dot" style="background:#E8B84B"></div>
+                <div class="dot" style="background:#E8367B"></div>
+                <div class="title" id="demo-title">My App</div>
+                <div class="pad"></div>
+              </div>
+              <div class="demo-content">
+                <div class="h">Tasks</div>
+                <div class="rule"></div>
+                <div class="demo-tasks">
+                  <div class="demo-task">Ship path configuration docs</div>
+                  <div class="demo-task">Add badge bridge component</div>
+                  <div class="demo-task">Sign the macOS build</div>
+                </div>
+                <div class="demo-url" id="demo-url">/tasks</div>
+              </div>
+
+              <div class="demo-modal-overlay">
+                <div class="demo-modal">
+                  <div class="bar">Edit &mdash; 800&times;600</div>
+                  <div class="body">
+                    <div class="field" style="height:28px"></div>
+                    <div class="field" style="height:56px"></div>
+                    <div class="save">Save</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="demo-newwin">
+                <div class="bar">
+                  <div class="dot" style="background:#F4753F"></div>
+                  <div class="dot" style="background:#E8B84B"></div>
+                  <div class="dot" style="background:#E8367B"></div>
+                  <div class="title">Reports &mdash; 1200&times;800</div>
+                </div>
+                <div class="chart">
+                  <div class="bar-col" style="height:40%;border-top:2px solid var(--coral)"></div>
+                  <div class="bar-col" style="height:70%;border-top:2px solid var(--coral)"></div>
+                  <div class="bar-col" style="height:55%;border-top:2px solid var(--pink)"></div>
+                  <div class="bar-col" style="height:88%;border-top:2px solid var(--pink)"></div>
+                </div>
+              </div>
+
+              <div class="demo-native">
+                <div class="tag">native-screen-requested</div>
+                <div class="b">Rust takes over. No web content is loaded &mdash; your Tauri code renders this screen.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pres-callout">
+            <div class="n" id="pres-name">modal</div>
+            <div class="d" id="pres-desc"></div>
+          </div>
+
+          <div class="tbl tbl-pres">
+            <div class="tbl-head"><div>Presentation</div><div>Behavior</div></div>
+            <div id="pres-table"></div>
+          </div>
+        </section>
+
+        <section id="bridge">
+          <h2>Bridge components</h2>
+          <p class="intro">The Bridge is the desktop equivalent of Strada: structured messages between a Stimulus controller in the WebView and a handler in Rust. Write the controller you would write for mobile, name the component, and the shell routes it.</p>
+
+          <div class="bridge-grid">
+            <div class="bridge-card"><div class="n">notification</div><div class="b">Native OS notifications</div></div>
+            <div class="bridge-card"><div class="n">menu-item</div><div class="b">Items in the native menu bar</div></div>
+            <div class="bridge-card"><div class="n">file-picker</div><div class="b">Native open and save dialogs</div></div>
+            <div class="bridge-card"><div class="n">badge</div><div class="b">Dock or taskbar badge count</div></div>
+            <div class="bridge-card"><div class="n">shortcut</div><div class="b">Global keyboard shortcuts</div></div>
+          </div>
+
+          <h3>A notification, end to end</h3>
+          <div class="tab-row" data-tabs="br">
+            <button class="tab-btn active" type="button" data-tab="js">Stimulus</button>
+            <button class="tab-btn" type="button" data-tab="erb">ERB</button>
+            <button class="tab-btn" type="button" data-tab="esm">npm / ESM</button>
+          </div>
+          <div class="code mb-14 active" data-panel="br:js">
+            <button class="copy-btn" type="button">copy</button>
+            <pre data-lang="js">// app/javascript/controllers/notify_controller.js
+import { Controller } from "@hotwired/stimulus"
+
+export default class extends TurboDesktop.stimulusBridge(Controller, "notification") {
+  connect() {
+    super.connect()
+    this.sendBridge("connect", { title: "My App" })
+  }
+
+  notify(event) {
+    this.sendBridge("connect", {
+      title: "New Message",
+      body: event.target.dataset.body
+    })
+  }
+
+  receiveBridge(message) {
+    console.log("Native says:", message)
+  }
+}</pre>
+          </div>
+          <div class="code mb-14" data-panel="br:erb">
+            <button class="copy-btn" type="button">copy</button>
+            <pre data-lang="erb">&lt;%# Attach bridge data attributes to any element %&gt;
+&lt;%= tag.button "Export PDF",
+      **turbo_desktop_bridge("menu-item",
+        title: "Export PDF",
+        shortcut: "Cmd+E") %&gt;</pre>
+          </div>
+          <div class="code mb-14" data-panel="br:esm">
+            <button class="copy-btn" type="button">copy</button>
+            <pre data-lang="js">// npm install @turbo-desktop/bridge
+import { stimulusBridge, isTurboDesktop } from "@turbo-desktop/bridge"
+
+if (isTurboDesktop()) {
+  const info = await TurboDesktop.getWindowInfo()
+  console.log(`Running on ${info.platform}`)
+}</pre>
+          </div>
+          <p class="note" style="margin:0">The <code class="inline">turbo-desktop.js</code> IIFE is injected into every page by the shell. The npm package only adds types and ESM exports over the same globals &mdash; nothing is bundled twice.</p>
+        </section>
+
+        <section id="inspector">
+          <h2>Dev Inspector</h2>
+          <p class="intro" style="margin-bottom:22px">In development, press <span class="kbd">Cmd/Ctrl</span> <span class="kbd">Shift</span> <span class="kbd">D</span> to open an in-app overlay over your running app.</p>
+
+          <div class="card-grid mb">
+            <div class="card"><div class="t">Components</div><div class="b">Every available bridge component, which are active on this page, and a copy-pasteable Rails + Stimulus snippet.</div></div>
+            <div class="card"><div class="t">Messages</div><div class="b">A live log of web&harr;native bridge traffic as it happens.</div></div>
+            <div class="card"><div class="t">Navigation</div><div class="b">The path-configuration presentation currently applied to this URL.</div></div>
+            <div class="card"><div class="t">Shell</div><div class="b">Platform, architecture, shell version, and the configured server URL.</div></div>
+          </div>
+
+          <div class="code mb-14">
+            <button class="copy-btn" type="button">copy</button>
+            <pre data-lang="ruby"># config/initializers/turbo_desktop.rb
+config.inspector_enabled = Rails.env.development?
+
+# app/views/layouts/application.html.erb, in &lt;head&gt;
+# &lt;%= turbo_desktop_inspector_meta_tag %&gt;</pre>
+          </div>
+          <p class="note" style="margin:0">Need it against a build you cannot rebuild? Flip it on at runtime with <code class="inline">localStorage.setItem("td:inspector", "1")</code>.</p>
+        </section>
+
+        <section id="rails-gem">
+          <h2>Rails gem</h2>
+          <p class="intro">The <code class="inline" style="font-size:13px">turbo_desktop-rails</code> gem gives your app shell awareness. Detection reads the User-Agent, e.g. <code class="inline" style="font-size:12.5px">Turbo Desktop/0.0.1 (macOS; aarch64)</code>.</p>
+
+          <div class="tbl tbl-helpers mb">
+            <div class="tbl-head"><div>Helper</div><div>Returns</div></div>
+            <div class="tbl-row"><div class="mono">turbo_desktop_app?</div><div>true when the request comes from a Turbo Desktop shell</div></div>
+            <div class="tbl-row"><div class="mono">turbo_desktop_platform</div><div>"macos", "windows", "linux", or nil</div></div>
+            <div class="tbl-row"><div class="mono">turbo_desktop_arch</div><div>"aarch64", "x86_64", or nil</div></div>
+            <div class="tbl-row"><div class="mono">turbo_desktop_only { }</div><div>Renders the block only inside the desktop app</div></div>
+            <div class="tbl-row"><div class="mono">turbo_web_only { }</div><div>Renders the block only for regular web browsers</div></div>
+            <div class="tbl-row"><div class="mono">turbo_desktop_bridge(component, **opts)</div><div>Outputs the bridge data attributes for an element</div></div>
+          </div>
+
+          <div class="code">
+            <button class="copy-btn" type="button">copy</button>
+            <pre data-lang="ruby"># config/initializers/turbo_desktop.rb
+TurboDesktop.configure do |config|
+  config.path_configuration = {
+    settings: { screenshots_enabled: true },
+    rules: [
+      { patterns: ["/"],                 properties: { presentation: "default" } },
+      { patterns: ["/new$", "/edit$"],   properties: { presentation: "modal" } },
+      { patterns: ["/settings"],         properties: { presentation: "native" } }
+    ]
+  }
+end</pre>
+          </div>
+        </section>
+
+        <section id="js-api">
+          <h2>JavaScript API</h2>
+          <p class="intro">Everything hangs off <code class="inline" style="font-size:13px">window.TurboDesktop</code>, injected by the shell on every page load. Outside the shell it is undefined &mdash; guard with <code class="inline" style="font-size:13px">isTurboDesktop()</code>.</p>
+
+          <div class="api-group">
+            <div class="api-group-head"><div class="n">TurboDesktop</div><div class="s">core</div></div>
+            <div class="tbl tbl-api">
+              <div class="tbl-row"><div class="mono">proposeVisit(url, action?)</div><div>Ask the shell how to present a URL. Resolves to { action, presentation }.</div></div>
+              <div class="tbl-row"><div class="mono">setTitle(title)</div><div>Update the native window title bar.</div></div>
+              <div class="tbl-row"><div class="mono">sendBridgeMessage(component, event, data?)</div><div>Send a bridge message; resolves with the native response or null.</div></div>
+              <div class="tbl-row"><div class="mono">getWindowInfo()</div><div>Size, position, scale factor, fullscreen state, platform, and arch.</div></div>
+              <div class="tbl-row"><div class="mono">closeModal(label)</div><div>Close a modal window by its label.</div></div>
+              <div class="tbl-row"><div class="mono">toggleDevTools()</div><div>Toggle developer tools and the bridge inspector.</div></div>
+            </div>
+          </div>
+
+          <div class="api-group">
+            <div class="api-group-head"><div class="n">TurboDesktop.shell</div><div class="s">child processes</div></div>
+            <div class="tbl tbl-api">
+              <div class="tbl-row"><div class="mono">spawn(id, command, args?, options?)</div><div>Spawn a tracked child process with streaming output.</div></div>
+              <div class="tbl-row"><div class="mono">kill(id) / status(id) / list()</div><div>Manage and inspect tracked processes.</div></div>
+              <div class="tbl-row"><div class="mono">onOutput(id, cb) / offOutput(id)</div><div>Subscribe to stdout, stderr, and exit events.</div></div>
+            </div>
+          </div>
+
+          <div class="api-group">
+            <div class="api-group-head"><div class="n">TurboDesktop.fs</div><div class="s">file system, supports ~/ expansion</div></div>
+            <div class="tbl tbl-api">
+              <div class="tbl-row"><div class="mono">read(path, encoding?)</div><div>Read a file as utf8 or base64.</div></div>
+              <div class="tbl-row"><div class="mono">write(path, content, { append })</div><div>Write or append to a file.</div></div>
+              <div class="tbl-row"><div class="mono">exists(path) / list(path)</div><div>Check a path or list a directory.</div></div>
+              <div class="tbl-row"><div class="mono">mkdir(path) / remove(path, { recursive })</div><div>Create or delete directories and files.</div></div>
+            </div>
+          </div>
+
+          <div class="api-group">
+            <div class="api-group-head"><div class="n">TurboDesktop.sudo</div><div class="s">privileged commands (macOS)</div></div>
+            <div class="tbl tbl-api">
+              <div class="tbl-row"><div class="mono">execute(command)</div><div>Run with admin privileges; triggers the OS password dialog.</div></div>
+              <div class="tbl-row"><div class="mono">spawn(id, command)</div><div>Run privileged with streaming output.</div></div>
+            </div>
+          </div>
+
+          <div class="api-group">
+            <div class="api-group-head"><div class="n">TurboDesktop.updater</div><div class="s">app updates</div></div>
+            <div class="tbl tbl-api">
+              <div class="tbl-row"><div class="mono">check()</div><div>Resolves to { status, version, date, body }.</div></div>
+              <div class="tbl-row"><div class="mono">downloadAndInstall()</div><div>Download and install the available update. May restart the app.</div></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="cli">
+          <h2>CLI</h2>
+          <p class="intro" style="margin-bottom:22px">Scaffolding for a new shell, no clone required.</p>
+          <div class="code">
+            <button class="copy-btn" type="button">copy</button>
+            <pre data-lang="bash">npx turbo-desktop new myapp     # scaffold a shell
+npx turbo-desktop dev            # run the shell against your server
+npx turbo-desktop build          # produce a signed platform bundle</pre>
+          </div>
+        </section>
+
+        <section id="comparison">
+          <h2>How it compares</h2>
+          <p class="intro">Same mental model as the mobile shells, different runtime underneath.</p>
+
+          <div class="tbl tbl-cmp">
+            <div class="tbl-head"><div>Concept</div><div>turbo-ios</div><div>turbo-android</div><div class="hl">Turbo Desktop</div></div>
+            <div class="tbl-row"><div class="concept">Shell runtime</div><div>WKWebView (Swift)</div><div>WebView (Kotlin)</div><div class="td">Tauri WebView (Rust)</div></div>
+            <div class="tbl-row"><div class="concept">Path configuration</div><div>JSON, last-match-wins</div><div>JSON, last-match-wins</div><div class="td">JSON, last-match-wins</div></div>
+            <div class="tbl-row"><div class="concept">Native comms</div><div>Strada</div><div>Strada</div><div class="td">BridgeComponent</div></div>
+            <div class="tbl-row"><div class="concept">JS injection</div><div>WKUserScript</div><div>evaluateJavascript</div><div class="td">on_page_load + eval</div></div>
+            <div class="tbl-row"><div class="concept">Rails gem</div><div>turbo-rails</div><div>turbo-rails</div><div class="td">turbo_desktop-rails</div></div>
+            <div class="tbl-row"><div class="concept">Binary size</div><div>System WebKit</div><div>~20 MB</div><div class="td">~5&ndash;10 MB</div></div>
+            <div class="tbl-row"><div class="concept">Platforms</div><div>iOS, iPadOS</div><div>Android</div><div class="td">macOS, Windows, Linux</div></div>
+          </div>
+
+          <div class="site-footer">
+            <img src="assets/logo.png" alt="">
+            <span>MIT licensed. Built with Tauri, Hotwire, and Ruby on Rails.</span>
+          </div>
+        </section>
+
+      </div>
+
+      <div class="toc">
+        <div class="toc-inner">
+          <div class="toc-title">On this page</div>
+          <div class="toc-links">
+            <a class="toc-link" href="#overview">Overview</a>
+            <a class="toc-link" href="#quick-start">Quick start</a>
+            <a class="toc-link" href="#path-config">Path configuration</a>
+            <a class="toc-link" href="#bridge">Bridge components</a>
+            <a class="toc-link" href="#inspector">Dev Inspector</a>
+            <a class="toc-link" href="#rails-gem">Rails gem</a>
+            <a class="toc-link" href="#js-api">JavaScript API</a>
+            <a class="toc-link" href="#cli">CLI</a>
+            <a class="toc-link" href="#comparison">Comparison</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="assets/site.js"></script>
+</body>
+</html>
