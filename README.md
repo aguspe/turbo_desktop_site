@@ -2,6 +2,8 @@
 
 Documentation site for [Turbo Desktop](https://github.com/aguspe/turbo_desktop) — Turbo Native, for the desktop.
 
+Live at **[turbo-desktop.dev](https://turbo-desktop.dev)** (Render static site, auto-deploys from `main`).
+
 Static site, no build step. Ported from the Claude Design project "Turbo Desktop documentation UI".
 
 ## Structure
