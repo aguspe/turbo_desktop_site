@@ -17,10 +17,11 @@
   <div class="brand">
     <img src="assets/logo.png" alt="Turbo Desktop">
     <span class="name">Turbo Desktop</span>
-    <span class="version">v0.0.1</span>
+    <span class="version">v0.2.1</span>
   </div>
   <div class="spacer"></div>
   <nav>
+    <a href="https://github.com/aguspe/turbo_desktop/releases/latest" target="_blank" rel="noopener">Download</a>
     <a href="https://github.com/aguspe/turbo_desktop" target="_blank" rel="noopener">GitHub</a>
     <button class="theme-toggle" id="theme-toggle" type="button">Light</button>
   </nav>
@@ -109,8 +110,10 @@
           <div class="card-grid">
             <div class="card"><div class="t">No new UI framework</div><div class="b">Rails views, Turbo Frames, and Stimulus controllers work unchanged.</div></div>
             <div class="card"><div class="t">5&ndash;10 MB binaries</div><div class="b">Tauri uses the OS WebView. No bundled Chromium to ship.</div></div>
-            <div class="card"><div class="t">Native where it counts</div><div class="b">Notifications, menus, file pickers, shortcuts, and badges via the Bridge.</div></div>
+            <div class="card"><div class="t">Native where it counts</div><div class="b">Notifications, menus, dialogs, clipboard, shell &amp; sudo, drag &amp; drop, file associations, launch at login &mdash; via the Bridge.</div></div>
             <div class="card"><div class="t">Server-driven routing</div><div class="b">Path configuration is JSON served by Rails &mdash; change it without a rebuild.</div></div>
+            <div class="card"><div class="t">Opens like an app</div><div class="b">The shell starts your Rails server on launch and stops it on quit. One icon, not two terminals.</div></div>
+            <div class="card"><div class="t">Files, with consent</div><div class="b">The filesystem is scoped to declared roots &mdash; but a path the user picks, drops, or opens with the app is consent, and just works.</div></div>
           </div>
         </section>
 
@@ -193,13 +196,12 @@ if (window.TurboDesktop?.isNative) {
           <div class="step">
             <div class="step-num">4</div>
             <div class="step-body">
-              <h3>Run both processes</h3>
+              <h3>Run it</h3>
               <div class="code">
                 <button class="copy-btn" type="button">copy</button>
-                <pre data-lang="bash">bin/rails server      # your app
-cargo tauri dev       # the shell</pre>
+                <pre data-lang="bash">npx turbo-desktop dev</pre>
               </div>
-              <p class="note">The window opens on your <code class="inline">server_url</code>. Every Turbo visit from here on is proposed to the shell before it happens.</p>
+              <p class="note">The scaffolded config carries <code class="inline">"server": { "command": "bin/rails server" }</code>, so opening the app starts Rails too &mdash; and quitting stops it. A server you started yourself is left alone. Every Turbo visit from here on is proposed to the shell before it happens.</p>
             </div>
           </div>
         </section>
@@ -297,10 +299,18 @@ cargo tauri dev       # the shell</pre>
           <div class="bridge-grid">
             <div class="bridge-card"><div class="n">notification</div><div class="b">Native OS notifications</div></div>
             <div class="bridge-card"><div class="n">menu-item</div><div class="b">Items in the native menu bar</div></div>
-            <div class="bridge-card"><div class="n">file-picker</div><div class="b">Native open and save dialogs</div></div>
+            <div class="bridge-card"><div class="n">file-picker</div><div class="b">Native open and save dialogs; a pick grants the path</div></div>
+            <div class="bridge-card"><div class="n">filesystem</div><div class="b">Read and write inside declared roots and granted paths</div></div>
+            <div class="bridge-card"><div class="n">shell</div><div class="b">Child processes through the login shell, output streamed</div></div>
+            <div class="bridge-card"><div class="n">sudo</div><div class="b">Allowlisted elevation: macOS dialog, polkit, UAC</div></div>
+            <div class="bridge-card"><div class="n">clipboard</div><div class="b">Read and write the system clipboard, no gesture needed</div></div>
+            <div class="bridge-card"><div class="n">autostart</div><div class="b">Launch at login, behind a visible toggle</div></div>
+            <div class="bridge-card"><div class="n">file-open</div><div class="b">Files opened with the app, even from a cold launch</div></div>
             <div class="bridge-card"><div class="n">badge</div><div class="b">Dock or taskbar badge count</div></div>
             <div class="bridge-card"><div class="n">shortcut</div><div class="b">Global keyboard shortcuts</div></div>
+            <div class="bridge-card"><div class="n">updater</div><div class="b">Check for and install app updates</div></div>
           </div>
+          <p class="note" style="margin-top:14px">Dropped files and OS-opened files also surface as DOM events &mdash; <code class="inline">turbo-desktop:drop</code> and <code class="inline">turbo-desktop:file-open</code> &mdash; so a Stimulus <code class="inline">data-action</code> is all a page needs.</p>
 
           <h3>A notification, end to end</h3>
           <div class="tab-row" data-tabs="br">
@@ -376,7 +386,7 @@ config.inspector_enabled = Rails.env.development?
 
         <section id="rails-gem">
           <h2>Rails gem</h2>
-          <p class="intro">The <code class="inline" style="font-size:13px">turbo_desktop-rails</code> gem gives your app shell awareness. Detection reads the User-Agent, e.g. <code class="inline" style="font-size:12.5px">Turbo Desktop/0.0.1 (macOS; aarch64)</code>.</p>
+          <p class="intro">The <code class="inline" style="font-size:13px">turbo_desktop-rails</code> gem gives your app shell awareness. Detection reads the User-Agent, e.g. <code class="inline" style="font-size:12.5px">Turbo Desktop/0.2.1 (macOS; aarch64)</code>.</p>
 
           <div class="tbl tbl-helpers mb">
             <div class="tbl-head"><div>Helper</div><div>Returns</div></div>
@@ -440,10 +450,33 @@ end</pre>
           </div>
 
           <div class="api-group">
-            <div class="api-group-head"><div class="n">TurboDesktop.sudo</div><div class="s">privileged commands (macOS)</div></div>
+            <div class="api-group-head"><div class="n">TurboDesktop.sudo</div><div class="s">privileged commands, allowlisted</div></div>
             <div class="tbl tbl-api">
-              <div class="tbl-row"><div class="mono">execute(command)</div><div>Run with admin privileges; triggers the OS password dialog.</div></div>
+              <div class="tbl-row"><div class="mono">execute(command)</div><div>Run elevated through the platform's own prompt: macOS password dialog, polkit on Linux, UAC on Windows.</div></div>
               <div class="tbl-row"><div class="mono">spawn(id, command)</div><div>Run privileged with streaming output.</div></div>
+            </div>
+          </div>
+
+          <div class="api-group">
+            <div class="api-group-head"><div class="n">TurboDesktop.clipboard</div><div class="s">system clipboard</div></div>
+            <div class="tbl tbl-api">
+              <div class="tbl-row"><div class="mono">readText()</div><div>What any application copied, or null when the clipboard holds no text.</div></div>
+              <div class="tbl-row"><div class="mono">writeText(text)</div><div>Set the clipboard — no user gesture or focus required.</div></div>
+            </div>
+          </div>
+
+          <div class="api-group">
+            <div class="api-group-head"><div class="n">TurboDesktop.autostart</div><div class="s">launch at login</div></div>
+            <div class="tbl tbl-api">
+              <div class="tbl-row"><div class="mono">enable() / disable()</div><div>Record the choice with the OS: Launch Agent, registry Run key, or XDG entry.</div></div>
+              <div class="tbl-row"><div class="mono">isEnabled()</div><div>The current OS-side state, for a settings toggle.</div></div>
+            </div>
+          </div>
+
+          <div class="api-group">
+            <div class="api-group-head"><div class="n">TurboDesktop.dragDrop</div><div class="s">files from the desktop</div></div>
+            <div class="tbl tbl-api">
+              <div class="tbl-row"><div class="mono">onDrop(cb) / onEnter(cb) / onLeave(cb)</div><div>Files dragged onto any window, with real paths and the drop position. Also dispatched as DOM events.</div></div>
             </div>
           </div>
 
