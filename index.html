@@ -35,14 +35,26 @@
       <div class="nav-group-items">
         <a class="nav-link" href="#overview">Overview</a>
         <a class="nav-link" href="#quick-start">Quick start</a>
+        <a class="nav-link" href="#configuration">Configuration</a>
       </div>
     </div>
     <div class="nav-group">
       <div class="nav-group-title">Core concepts</div>
       <div class="nav-group-items">
         <a class="nav-link" href="#path-config">Path configuration</a>
+        <a class="nav-link" href="#windows">Windows &amp; modals</a>
+        <a class="nav-link" href="#navigation">Links &amp; navigation</a>
         <a class="nav-link" href="#bridge">Bridge components</a>
+        <a class="nav-link" href="#files">Files from the desktop</a>
         <a class="nav-link" href="#inspector">Dev Inspector</a>
+      </div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-title">Running for real</div>
+      <div class="nav-group-items">
+        <a class="nav-link" href="#connection">Connection loss</a>
+        <a class="nav-link" href="#security">Security</a>
+        <a class="nav-link" href="#shipping">Shipping</a>
       </div>
     </div>
     <div class="nav-group">
@@ -119,7 +131,7 @@
 
         <section id="quick-start">
           <h2>Quick start</h2>
-          <p class="intro" style="margin-bottom:30px">Four steps from an existing Rails app to a running desktop shell. You need Rails 7+, Ruby 3.1+, and a Rust toolchain.</p>
+          <p class="intro" style="margin-bottom:30px">Four steps to a running desktop shell, for a new Rails app or one you already have. You need Rails 7+, Ruby 3.2+, Node 18+, and a Rust toolchain.</p>
 
           <div class="step">
             <div class="step-num">1</div>
@@ -127,10 +139,12 @@
               <h3>Scaffold the shell</h3>
               <div class="code">
                 <button class="copy-btn" type="button">copy</button>
-                <pre data-lang="bash">npx turbo-desktop new myapp
-cd myapp &amp;&amp; npm install
-cargo install tauri-cli</pre>
+                <pre data-lang="bash">cargo install tauri-cli
+
+npx turbo-desktop new myapp      # a new Rails app, with its shell
+npx turbo-desktop init .         # or: add a shell to the app you are in</pre>
               </div>
+              <p class="note">Both put the shell in <code class="inline">desktop/</code>, next to your Rails code. <code class="inline">new</code> also adds the gem, runs its installer, and mounts the engine, so steps 2 and 3 are already done for you.</p>
             </div>
           </div>
 
@@ -138,16 +152,16 @@ cargo install tauri-cli</pre>
             <div class="step-num">2</div>
             <div class="step-body">
               <h3>Point it at your Rails server</h3>
-              <div class="file-label">turbo-desktop.config.json</div>
+              <div class="file-label">desktop/turbo-desktop.config.json</div>
               <div class="code">
                 <button class="copy-btn" type="button">copy</button>
                 <pre data-lang="json">{
   "server_url": "http://localhost:3000",
   "app_name": "My App",
-  "path_configuration_url": "http://localhost:3000/turbo-desktop/path-configuration.json"
+  "server": { "command": "bin/rails server", "directory": ".." }
 }</pre>
               </div>
-              <p class="note">Leave <code class="inline">path_configuration_url</code> out and it defaults to <code class="inline">{server_url}/turbo-desktop/path-configuration.json</code>.</p>
+              <p class="note"><code class="inline">server_url</code> is also the app's trust boundary: the bridge answers only pages served from that exact origin. Every key is described under <a href="#configuration">Configuration</a>.</p>
             </div>
           </div>
 
@@ -168,9 +182,8 @@ gem "turbo_desktop-rails", "~> 0.2"
 # bundle install
 # rails generate turbo_desktop:install
 
-# config/routes.rb
-get "/turbo-desktop/path-configuration",
-    to: "turbo_desktop#path_configuration"</pre>
+# config/routes.rb &mdash; the installer adds this line
+mount TurboDesktop::Engine =&gt; "/turbo-desktop"</pre>
               </div>
               <div class="code" data-panel="qs:erb">
                 <button class="copy-btn" type="button">copy</button>
@@ -199,16 +212,59 @@ if (window.TurboDesktop?.isNative) {
               <h3>Run it</h3>
               <div class="code">
                 <button class="copy-btn" type="button">copy</button>
-                <pre data-lang="bash">npx turbo-desktop dev</pre>
+                <pre data-lang="bash">cd desktop
+npx turbo-desktop dev</pre>
               </div>
-              <p class="note">The scaffolded config carries <code class="inline">"server": { "command": "bin/rails server" }</code>, so opening the app starts Rails too &mdash; and quitting stops it. A server you started yourself is left alone. Every Turbo visit from here on is proposed to the shell before it happens.</p>
+              <p class="note">The scaffolded config carries <code class="inline">"server": { "command": "bin/rails server" }</code>, so opening the app starts Rails too &mdash; and quitting stops it. A server you started yourself is left alone. The first run compiles the shell, which takes a few minutes; later runs start in seconds. Every Turbo visit from here on is proposed to the shell before it happens.</p>
             </div>
           </div>
         </section>
 
+        <section id="configuration">
+          <h2>Configuration</h2>
+          <p class="intro">One file, <code class="inline" style="font-size:13px">desktop/turbo-desktop.config.json</code>, describes the app to the shell. Everything in it is closed by default and opened by naming what you need.</p>
+
+          <div class="tbl tbl-helpers mb">
+            <div class="tbl-head"><div>Key</div><div>What it does</div></div>
+            <div class="tbl-row"><div class="mono">server_url</div><div>Where your Rails app answers. Also the only origin the bridge trusts.</div></div>
+            <div class="tbl-row"><div class="mono">app_name</div><div>The window title and the name in the menu bar.</div></div>
+            <div class="tbl-row"><div class="mono">path_configuration_url</div><div>Optional. Defaults to <span class="mono">{server_url}/turbo-desktop/path-configuration.json</span>.</div></div>
+            <div class="tbl-row"><div class="mono">user_agent</div><div>Optional, and best left out: the shell then reports its own version and platform. If you set it, it replaces the whole string, so keep the <span class="mono">Turbo Desktop</span> token the gem detects on.</div></div>
+            <div class="tbl-row"><div class="mono">window</div><div><span class="mono">width</span>, <span class="mono">height</span>, <span class="mono">min_width</span>, <span class="mono">min_height</span>, <span class="mono">resizable</span>.</div></div>
+            <div class="tbl-row"><div class="mono">server</div><div><span class="mono">command</span> and <span class="mono">directory</span>: start your Rails server when the app opens.</div></div>
+            <div class="tbl-row"><div class="mono">navigation</div><div><span class="mono">internal_hosts</span> and <span class="mono">refresh_after_seconds</span>. See <a href="#navigation">Links &amp; navigation</a>.</div></div>
+            <div class="tbl-row"><div class="mono">filesystem</div><div><span class="mono">allowed_roots</span>. See <a href="#security">Security</a>.</div></div>
+            <div class="tbl-row"><div class="mono">sudo</div><div><span class="mono">enabled</span>, <span class="mono">allowed_commands</span>, <span class="mono">confirm</span>. See <a href="#security">Security</a>.</div></div>
+          </div>
+
+          <h3>Starting the server with the app</h3>
+          <p class="intro" style="margin-bottom:14px">With a <code class="inline">server</code> block, opening the app starts Rails too, so it behaves like an application rather than a viewer for something you have to run first.</p>
+          <div class="code mb-14">
+            <button class="copy-btn" type="button">copy</button>
+            <pre data-lang="json">{
+  "server": {
+    "command": "bin/rails server",
+    "directory": ".."
+  }
+}</pre>
+          </div>
+          <p class="note"><code class="inline">command</code> runs through your login shell on macOS and Linux, so rbenv, asdf, or mise are set up as they would be in a terminal. On Windows it runs through <code class="inline">cmd</code>: use <code class="inline">ruby bin\rails server</code>. <code class="inline">directory</code> is relative to the config file. If something already answers on <code class="inline">server_url</code>, the app uses it and leaves it running on quit; a server the app started is stopped when the app quits.</p>
+
+          <h3>Where the file is read from</h3>
+          <div class="tbl tbl-helpers mb">
+            <div class="tbl-head"><div>When</div><div>Where</div></div>
+            <div class="tbl-row"><div>In development</div><div>The directory you run in, or one level up. With no file, the app starts on defaults.</div></div>
+            <div class="tbl-row"><div>In a packaged app</div><div>Only from inside the bundle. The app refuses to start without it.</div></div>
+          </div>
+          <p class="note">The file names the origin the bridge trusts, the filesystem roots, and the sudo allowlist. Reading it from the working directory of a shipped app would let anyone who can write a file beside it grant themselves all three. A config that exists but does not parse is always fatal.</p>
+
+          <h3>What the user can change</h3>
+          <p class="note" style="margin:0">Only the window size. The shell remembers the size the user left the app at and reapplies it on the next launch. That preferences file can hold nothing but geometry; position is not remembered, because a remembered position becomes an off-screen window as soon as the displays are rearranged.</p>
+        </section>
+
         <section id="path-config">
           <h2>Path configuration</h2>
-          <p class="intro">A JSON document, served by Rails, that maps URL patterns to presentation rules. Same concept and the same last-match-wins semantics as turbo-ios and turbo-android &mdash; the shell stays dumb, your server decides how screens appear.</p>
+          <p class="intro">A JSON document, served by Rails, that maps URL patterns to presentation rules. A rule may also set <code class="inline" style="font-size:13px">title</code>, <code class="inline" style="font-size:13px">width</code>, and <code class="inline" style="font-size:13px">height</code> for the window it opens. Same concept and the same last-match-wins semantics as turbo-ios and turbo-android &mdash; the shell stays dumb, your server decides how screens appear.</p>
 
           <div class="code mb-36">
             <button class="copy-btn" type="button">copy</button>
@@ -216,7 +272,7 @@ if (window.TurboDesktop?.isNative) {
   "settings": { "screenshots_enabled": true },
   "rules": [
     { "patterns": ["/"],               "properties": { "presentation": "default" } },
-    { "patterns": ["/new$", "/edit$"], "properties": { "presentation": "modal", "title": "Edit" } },
+    { "patterns": ["/new$", "/edit$"], "properties": { "presentation": "modal", "title": "Edit", "width": 640, "height": 480 } },
     { "patterns": ["/reports/"],       "properties": { "presentation": "new_window" } },
     { "patterns": ["/settings"],       "properties": { "presentation": "native" } }
   ]
@@ -290,6 +346,65 @@ if (window.TurboDesktop?.isNative) {
             <div class="tbl-head"><div>Presentation</div><div>Behavior</div></div>
             <div id="pres-table"></div>
           </div>
+
+          <h3>When the server cannot be reached</h3>
+          <p class="note" style="margin:0">The shell starts with rules rather than none. It uses the last copy the server gave, cached on the user's machine; failing that, the copy bundled with the app as <code class="inline">desktop/path-configuration.json</code>; failing both, everything takes the default presentation. The server's copy replaces whichever was loaded as soon as it arrives. Keys the shell does not use are ignored, so one endpoint can serve the mobile shells too.</p>
+        </section>
+
+        <section id="windows">
+          <h2>Windows &amp; modals</h2>
+          <p class="intro">A rule with <code class="inline" style="font-size:13px">modal</code> or <code class="inline" style="font-size:13px">new_window</code> opens the URL in its own window: 800&times;600 and 1200&times;800 unless the rule says otherwise. These windows carry everything the main one does &mdash; the user agent, off-origin links going to the browser, and a working bridge.</p>
+
+          <div class="tbl tbl-api mb">
+            <div class="tbl-head"><div>In the page</div><div>Meaning</div></div>
+            <div class="tbl-row"><div class="mono">TurboDesktop.isModal</div><div>True inside a modal window.</div></div>
+            <div class="tbl-row"><div class="mono">TurboDesktop.windowLabel</div><div>This window's label, e.g. "modal-9b8b948".</div></div>
+            <div class="tbl-row"><div class="mono">TurboDesktop.closeModal()</div><div>Close the window the page is in. Pass a label to close another.</div></div>
+            <div class="tbl-row"><div class="mono">TurboDesktop.recede()</div><div>Close, and go back underneath.</div></div>
+            <div class="tbl-row"><div class="mono">TurboDesktop.refresh()</div><div>Close, and reload underneath &mdash; after a form submits.</div></div>
+            <div class="tbl-row"><div class="mono">TurboDesktop.resume()</div><div>Close, and leave underneath alone.</div></div>
+          </div>
+          <p class="note" style="margin:0">The three ways to dismiss are named after Hotwire Native's and mean the same. <code class="inline">refresh()</code> goes through Turbo when it is present, so scroll position and morphing survive. A modal is attached to the main window: it travels and closes with it, but the main window stays interactive. Windows opened with <code class="inline">new_window</code> stand alone.</p>
+        </section>
+
+        <section id="navigation">
+          <h2>Links &amp; navigation</h2>
+          <p class="intro">What happens to a link depends on where it points, and the shell decides &mdash; Turbo only ever sees links to your own origin.</p>
+
+          <h3>External links</h3>
+          <p class="intro" style="margin-bottom:14px">Links to anywhere other than your app open in the system browser. Otherwise a link to a payment provider replaces your app in its own window and leaves no way back. <code class="inline">mailto:</code>, <code class="inline">tel:</code>, and other schemes go to the app that owns them.</p>
+          <div class="code mb-14">
+            <button class="copy-btn" type="button">copy</button>
+            <pre data-lang="json">{
+  "navigation": {
+    "internal_hosts": ["accounts.google.com"]
+  }
+}</pre>
+          </div>
+          <p class="note">List a host to keep it inside the app: an OAuth round trip has to happen in this webview for the session cookie to land in the right place. Matching is exact, so <code class="inline">example.com</code> admits neither <code class="inline">evil-example.com</code> nor <code class="inline">sub.example.com</code>. A listed host can render, but it still cannot reach the bridge.</p>
+
+          <h3>Deep links</h3>
+          <p class="intro" style="margin-bottom:14px">A link from an email or another app can open yours at a particular page. <code class="inline">task-manager://orders/123</code> becomes a Turbo visit to <code class="inline">{server_url}/orders/123</code>, so path configuration still decides how it appears.</p>
+          <p class="note">The scheme is per app. The CLI derives it from the app's name and writes it, with a matching bundle identifier, into <code class="inline">tauri.conf.json</code> under <code class="inline">plugins.deep-link.desktop.schemes</code>. No desktop OS arbitrates duplicate schemes, so pick something distinctive. Links are resolved against <code class="inline">server_url</code> and refused if they point anywhere else.</p>
+
+          <h3>Refreshing when you come back</h3>
+          <p class="intro" style="margin-bottom:14px">Data goes stale while the app sits in the background. A desktop window loses focus at every glance elsewhere, though, so this is opt-in and waits for an absence long enough to matter.</p>
+          <div class="code mb-14">
+            <button class="copy-btn" type="button">copy</button>
+            <pre data-lang="json">{
+  "navigation": {
+    "refresh_after_seconds": 300
+  }
+}</pre>
+          </div>
+          <div class="code mb-14">
+            <button class="copy-btn" type="button">copy</button>
+            <pre data-lang="js">document.addEventListener("turbo-desktop:focus", (event) =&gt; {
+  const { awaySeconds, refreshing } = event.detail
+  if (refreshing &amp;&amp; hasUnsavedChanges()) event.preventDefault()
+})</pre>
+          </div>
+          <p class="note" style="margin:0">Leave the key out, or set it to 0, and the shell never refreshes on its own. It never interrupts someone typing: if the focus is in a field when the window returns, the refresh is skipped. Every return is announced, refresh or not, so a page can revalidate its own way or veto.</p>
         </section>
 
         <section id="bridge">
@@ -351,8 +466,8 @@ export default class extends TurboDesktop.stimulusBridge(Controller, "notificati
           </div>
           <div class="code mb-14" data-panel="br:esm">
             <button class="copy-btn" type="button">copy</button>
-            <pre data-lang="js">// npm install @turbo-desktop/bridge
-import { stimulusBridge, isTurboDesktop } from "@turbo-desktop/bridge"
+            <pre data-lang="js">// npm install turbo-desktop-bridge
+import { stimulusBridge, isTurboDesktop } from "turbo-desktop-bridge"
 
 if (isTurboDesktop()) {
   const info = await TurboDesktop.getWindowInfo()
@@ -360,6 +475,43 @@ if (isTurboDesktop()) {
 }</pre>
           </div>
           <p class="note" style="margin:0">The <code class="inline">turbo-desktop.js</code> IIFE is injected into every page by the shell. The npm package only adds types and ESM exports over the same globals &mdash; nothing is bundled twice.</p>
+        </section>
+
+        <section id="files">
+          <h2>Files from the desktop</h2>
+          <p class="intro">A browser never tells a page where a file lives. The shell does, and treats the way the file arrived as consent to read it.</p>
+
+          <div class="tbl tbl-helpers mb">
+            <div class="tbl-head"><div>How it arrives</div><div>What the page gets</div></div>
+            <div class="tbl-row"><div>Dragged onto a window</div><div><span class="mono">turbo-desktop:drop</span> with <span class="mono">paths</span> and <span class="mono">position</span>; <span class="mono">drag-enter</span> and <span class="mono">drag-leave</span> around it.</div></div>
+            <div class="tbl-row"><div>Opened with the app</div><div><span class="mono">turbo-desktop:file-open</span> with <span class="mono">paths</span> &mdash; double-click, &ldquo;Open With&rdquo;, or a drop on the dock icon.</div></div>
+            <div class="tbl-row"><div>Picked in a dialog</div><div>The <span class="mono">file-picker</span> component's response.</div></div>
+          </div>
+
+          <div class="code mb-14">
+            <button class="copy-btn" type="button">copy</button>
+            <pre data-lang="js">// data-action="turbo-desktop:drop@document-&gt;importer#filesDropped
+//              turbo-desktop:file-open@document-&gt;importer#filesDropped"
+async filesDropped(event) {
+  for (const path of event.detail.paths) {
+    const { content } = await TurboDesktop.fs.read(path)
+  }
+}</pre>
+          </div>
+          <p class="note">Each of the three grants that path to the filesystem bridge for the session: one file for a file, everything inside for a folder. So &ldquo;Save As&hellip; &rarr; Desktop&rdquo; works without declaring <code class="inline">~/Desktop</code> as a root. A file opened by double-click while the app was closed is queued until your page is up.</p>
+
+          <h3>Owning a file type</h3>
+          <div class="file-label">desktop/src-tauri/tauri.conf.json</div>
+          <div class="code">
+            <button class="copy-btn" type="button">copy</button>
+            <pre data-lang="json">{
+  "bundle": {
+    "fileAssociations": [
+      { "ext": ["csv"], "description": "Data import", "role": "Viewer" }
+    ]
+  }
+}</pre>
+          </div>
         </section>
 
         <section id="inspector">
@@ -381,7 +533,60 @@ config.inspector_enabled = Rails.env.development?
 # app/views/layouts/application.html.erb, in &lt;head&gt;
 # &lt;%= turbo_desktop_inspector_meta_tag %&gt;</pre>
           </div>
-          <p class="note" style="margin:0">Need it against a build you cannot rebuild? Flip it on at runtime with <code class="inline">localStorage.setItem("td:inspector", "1")</code>.</p>
+          <p class="note">The installer writes the first line for you. The meta tag is yours to add. Need the inspector against a build you cannot rebuild? Flip it on at runtime with <code class="inline">localStorage.setItem("td:inspector", "1")</code>.</p>
+          <p class="note" style="margin:0"><strong>Requires <code class="inline">turbo_desktop-rails</code> 0.2.3 or later.</strong> Earlier versions answered 422 for the inspector's scripts in any app with forgery protection on, which is every app that uses <code class="inline">load_defaults</code>, so the overlay never opened. <code class="inline">bundle update turbo_desktop-rails</code> fixes it.</p>
+        </section>
+
+        <section id="connection">
+          <h2>Connection loss</h2>
+          <p class="intro">The shell watches your server and reports failures in Hotwire Native's vocabulary: <code class="inline" style="font-size:13px">network_failure</code>, <code class="inline" style="font-size:13px">timeout_failure</code>, <code class="inline" style="font-size:13px">http_failure</code>, and <code class="inline" style="font-size:13px">page_load_failure</code> mean here what they mean on mobile.</p>
+
+          <div class="card-grid mb">
+            <div class="card"><div class="t">Unreachable at launch</div><div class="b">The window opens on a bundled error page, and moves to your app as soon as the server answers.</div></div>
+            <div class="card"><div class="t">Lost while running</div><div class="b">A banner appears. The shell keeps probing and clears it on its own.</div></div>
+            <div class="card"><div class="t">Your 404s and 422s</div><div class="b">Left alone: those are your pages to serve. Only 5xx and failures to reach the server are reported.</div></div>
+            <div class="card"><div class="t">Your error page</div><div class="b"><span class="mono">desktop/src/error.html</span> is yours. It ships inside the app, so it must work with no network.</div></div>
+          </div>
+
+          <div class="code mb-14">
+            <button class="copy-btn" type="button">copy</button>
+            <pre data-lang="js">document.addEventListener("turbo-desktop:visit-error", (event) =&gt; {
+  const { error, status, retry } = event.detail
+  event.preventDefault()                 // suppress the shell's banner
+  showMyOwnBanner(error, status, retry)  // retry() attempts the visit again
+})</pre>
+          </div>
+          <p class="note" style="margin:0">To take over entirely rather than case by case, add <code class="inline">&lt;meta name="turbo-desktop-error-handling" content="manual"&gt;</code>. There is also <code class="inline">turbo-desktop:connection</code>, with <code class="inline">{ online, error }</code>, for reacting to the connection itself. The shell notices all this rather than the page, because the browser's <code class="inline">offline</code> event fires when this machine loses its network, not when your server goes down.</p>
+        </section>
+
+        <section id="security">
+          <h2>Security</h2>
+          <p class="intro">The bridge reaches the shell, the filesystem, and administrator privileges. It is closed by default and opened deliberately.</p>
+
+          <div class="tbl tbl-helpers mb">
+            <div class="tbl-head"><div>Boundary</div><div>Rule</div></div>
+            <div class="tbl-row"><div>Origin</div><div>Every bridge message is checked against <span class="mono">server_url</span>: scheme, host, and port. A page from anywhere else &mdash; an off-site link, a redirect, an embedded frame &mdash; is refused.</div></div>
+            <div class="tbl-row"><div>Filesystem</div><div>Reads and writes stay under the roots you declare, plus paths the user picked, dropped, or opened. With no configuration, only the app's own data directory.</div></div>
+            <div class="tbl-row"><div>Protected paths</div><div><span class="mono">.ssh</span>, <span class="mono">.aws</span>, <span class="mono">.gnupg</span>, and Rails <span class="mono">master.key</span> and <span class="mono">credentials.yml.enc</span> are refused even inside a root, and even when picked.</div></div>
+            <div class="tbl-row"><div>Path tricks</div><div>Paths are resolved before the check, so <span class="mono">..</span> and symlinks cannot walk out of a root.</div></div>
+            <div class="tbl-row"><div>Sudo</div><div>Off unless enabled, and then only for the commands you name. Anything with shell metacharacters is refused, so an allowed prefix cannot be extended into a second command.</div></div>
+            <div class="tbl-row"><div>Launch at login</div><div>Not a config key, on purpose. The page has to ask, behind a toggle the user can see.</div></div>
+          </div>
+
+          <div class="code mb-14">
+            <button class="copy-btn" type="button">copy</button>
+            <pre data-lang="json">{
+  "filesystem": {
+    "allowed_roots": ["~/Projects"]
+  },
+  "sudo": {
+    "enabled": true,
+    "allowed_commands": ["softwareupdate", "brew install"],
+    "confirm": true
+  }
+}</pre>
+          </div>
+          <p class="note" style="margin:0">Before the system's own elevation prompt, which does not say what is about to run, the app shows the exact command and asks. Set <code class="inline">confirm</code> to <code class="inline">false</code> only if your app already asks. Elevation uses each platform's mechanism: the macOS password dialog, polkit on Linux, UAC on Windows &mdash; where an elevated command's output arrives whole when it finishes rather than line by line.</p>
         </section>
 
         <section id="rails-gem">
@@ -396,7 +601,28 @@ config.inspector_enabled = Rails.env.development?
             <div class="tbl-row"><div class="mono">turbo_desktop_only { }</div><div>Renders the block only inside the desktop app</div></div>
             <div class="tbl-row"><div class="mono">turbo_web_only { }</div><div>Renders the block only for regular web browsers</div></div>
             <div class="tbl-row"><div class="mono">turbo_desktop_bridge(component, **opts)</div><div>Outputs the bridge data attributes for an element</div></div>
+            <div class="tbl-row"><div class="mono">turbo_desktop_inspector_meta_tag</div><div>Points the shell at the Dev Inspector. Renders nothing unless it is enabled</div></div>
           </div>
+
+          <h3>A whole template for the desktop</h3>
+          <p class="intro" style="margin-bottom:14px">Requests from the shell carry a Rails variant, so a view can be written for it instead of branching inside a shared one. Rails falls back to the plain template wherever no variant exists.</p>
+          <div class="code mb-36">
+            <button class="copy-btn" type="button">copy</button>
+            <pre data-lang="bash">app/views/orders/show.html.erb            # everyone
+app/views/orders/show.html+desktop.erb    # the desktop app
+app/views/layouts/application.html+desktop.erb</pre>
+          </div>
+
+          <h3>Configuration</h3>
+          <div class="tbl tbl-helpers mb">
+            <div class="tbl-head"><div>Setting</div><div>Default</div></div>
+            <div class="tbl-row"><div class="mono">config.path_configuration</div><div>Everything takes the default presentation</div></div>
+            <div class="tbl-row"><div class="mono">config.inspector_enabled</div><div>false; the installer sets it to development only</div></div>
+            <div class="tbl-row"><div class="mono">config.variant</div><div>:desktop. Rename it, or set nil to leave variants alone</div></div>
+            <div class="tbl-row"><div class="mono">config.user_agent_pattern</div><div>/Turbo Desktop/</div></div>
+            <div class="tbl-row"><div class="mono">config.inspector_mount_path</div><div>"/turbo-desktop". Change it if you mount the engine elsewhere</div></div>
+          </div>
+          <p class="note">Requires Ruby 3.2 or later and Rails 7.0 or later. Pin the gem to the minor version, as the CLI does: <code class="inline">gem "turbo_desktop-rails", "~&gt; 0.2"</code>.</p>
 
           <div class="code">
             <button class="copy-btn" type="button">copy</button>
@@ -425,7 +651,10 @@ end</pre>
               <div class="tbl-row"><div class="mono">setTitle(title)</div><div>Update the native window title bar.</div></div>
               <div class="tbl-row"><div class="mono">sendBridgeMessage(component, event, data?)</div><div>Send a bridge message; resolves with the native response or null.</div></div>
               <div class="tbl-row"><div class="mono">getWindowInfo()</div><div>Size, position, scale factor, fullscreen state, platform, and arch.</div></div>
-              <div class="tbl-row"><div class="mono">closeModal(label)</div><div>Close a modal window by its label.</div></div>
+              <div class="tbl-row"><div class="mono">version / platform / isNative</div><div>The shell's version, the OS, and true inside the shell.</div></div>
+              <div class="tbl-row"><div class="mono">isModal / windowLabel</div><div>Whether this page is in a modal, and the window's label.</div></div>
+              <div class="tbl-row"><div class="mono">closeModal(label?)</div><div>Close a modal by its label, or the one the page is in.</div></div>
+              <div class="tbl-row"><div class="mono">recede() / refresh() / resume()</div><div>Dismiss a modal and go back, reload, or do nothing underneath.</div></div>
               <div class="tbl-row"><div class="mono">toggleDevTools()</div><div>Toggle developer tools and the bridge inspector.</div></div>
             </div>
           </div>
@@ -481,6 +710,18 @@ end</pre>
           </div>
 
           <div class="api-group">
+            <div class="api-group-head"><div class="n">DOM events</div><div class="s">dispatched on document</div></div>
+            <div class="tbl tbl-api">
+              <div class="tbl-row"><div class="mono">turbo-desktop:drop</div><div>Files dropped on a window: { paths, position }.</div></div>
+              <div class="tbl-row"><div class="mono">turbo-desktop:drag-enter / drag-leave</div><div>Around a drop, for hover styling.</div></div>
+              <div class="tbl-row"><div class="mono">turbo-desktop:file-open</div><div>Files opened with the app: { paths }.</div></div>
+              <div class="tbl-row"><div class="mono">turbo-desktop:focus</div><div>The window came back: { awaySeconds, refreshing }. Cancel to veto a refresh.</div></div>
+              <div class="tbl-row"><div class="mono">turbo-desktop:visit-error</div><div>A visit failed: { error, status, retry }. Cancel to suppress the banner.</div></div>
+              <div class="tbl-row"><div class="mono">turbo-desktop:connection</div><div>The server went away or came back: { online, error }.</div></div>
+            </div>
+          </div>
+
+          <div class="api-group">
             <div class="api-group-head"><div class="n">TurboDesktop.updater</div><div class="s">app updates</div></div>
             <div class="tbl tbl-api">
               <div class="tbl-row"><div class="mono">check()</div><div>Resolves to { status, version, date, body }.</div></div>
@@ -491,13 +732,45 @@ end</pre>
 
         <section id="cli">
           <h2>CLI</h2>
-          <p class="intro" style="margin-bottom:22px">Scaffolding for a new shell, no clone required.</p>
-          <div class="code">
-            <button class="copy-btn" type="button">copy</button>
-            <pre data-lang="bash">npx turbo-desktop new myapp     # scaffold a shell
-npx turbo-desktop dev            # run the shell against your server
-npx turbo-desktop build          # produce a signed platform bundle</pre>
+          <p class="intro" style="margin-bottom:22px">Scaffolding and running, no clone required.</p>
+          <div class="tbl tbl-api mb">
+            <div class="tbl-head"><div>Command</div><div>What it does</div></div>
+            <div class="tbl-row"><div class="mono">new &lt;name&gt; [--icon file]</div><div>A new Rails app with the gem installed, the engine mounted, and a shell in desktop/.</div></div>
+            <div class="tbl-row"><div class="mono">init [path] [--icon file]</div><div>Adds desktop/ to a Rails app you already have.</div></div>
+            <div class="tbl-row"><div class="mono">dev</div><div>Runs the shell in development. Works from the project root or from desktop/.</div></div>
+            <div class="tbl-row"><div class="mono">build [--target arch]</div><div>Builds installers for this machine's platform. Unsigned unless you set up signing.</div></div>
           </div>
+          <div class="code mb-14">
+            <button class="copy-btn" type="button">copy</button>
+            <pre data-lang="bash">npx turbo-desktop new myapp --icon ./logo.png
+npx turbo-desktop build --target universal-apple-darwin</pre>
+          </div>
+          <p class="note" style="margin:0">Each scaffolded app gets its own name, bundle identifier, and deep-link scheme, so two apps built on the shell do not share preferences or answer each other's links. New apps are pinned to <code class="inline">turbo_desktop-rails "~&gt; 0.2"</code>.</p>
+        </section>
+
+        <section id="shipping">
+          <h2>Shipping</h2>
+          <p class="intro">A Turbo Desktop app is a Tauri app, so shipping means native installers per OS.</p>
+
+          <h3>Your icon</h3>
+          <div class="code mb-14">
+            <button class="copy-btn" type="button">copy</button>
+            <pre data-lang="bash">cd desktop
+cargo tauri icon path/to/your-icon.png</pre>
+          </div>
+          <p class="note">One square PNG, 1024&times;1024, transparent background. The generator writes every size and format, and <code class="inline">tauri.conf.json</code> already points at them.</p>
+
+          <h3>Installers</h3>
+          <div class="code mb-14">
+            <button class="copy-btn" type="button">copy</button>
+            <pre data-lang="bash">npx turbo-desktop build      # this machine's platform
+
+git tag v1.0.0 &amp;&amp; git push origin v1.0.0   # every platform, in CI</pre>
+          </div>
+          <p class="note">Tauri cannot cross-compile, so the <a href="https://github.com/aguspe/turbo_desktop/blob/main/.github/workflows/release.yml" target="_blank" rel="noopener">release workflow</a> builds macOS, Windows, and Linux on their own runners and attaches the installers to a draft GitHub Release. Copy it into your app's <code class="inline">.github/workflows/</code>. Set <code class="inline">server_url</code> to your production URL before building.</p>
+
+          <h3>Signing</h3>
+          <p class="note" style="margin:0">Builds are unsigned by default. They run, but macOS Gatekeeper and Windows SmartScreen warn about them. Signing is also what makes the bundled config tamper-resistant. The <a href="https://github.com/aguspe/turbo_desktop/blob/main/docs/DISTRIBUTION.md" target="_blank" rel="noopener">distribution guide</a> covers signing, notarization, and auto-update.</p>
         </section>
 
         <section id="comparison">
@@ -529,12 +802,19 @@ npx turbo-desktop build          # produce a signed platform bundle</pre>
           <div class="toc-links">
             <a class="toc-link" href="#overview">Overview</a>
             <a class="toc-link" href="#quick-start">Quick start</a>
+            <a class="toc-link" href="#configuration">Configuration</a>
             <a class="toc-link" href="#path-config">Path configuration</a>
+            <a class="toc-link" href="#windows">Windows &amp; modals</a>
+            <a class="toc-link" href="#navigation">Links &amp; navigation</a>
             <a class="toc-link" href="#bridge">Bridge components</a>
+            <a class="toc-link" href="#files">Files from the desktop</a>
             <a class="toc-link" href="#inspector">Dev Inspector</a>
+            <a class="toc-link" href="#connection">Connection loss</a>
+            <a class="toc-link" href="#security">Security</a>
             <a class="toc-link" href="#rails-gem">Rails gem</a>
             <a class="toc-link" href="#js-api">JavaScript API</a>
             <a class="toc-link" href="#cli">CLI</a>
+            <a class="toc-link" href="#shipping">Shipping</a>
             <a class="toc-link" href="#comparison">Comparison</a>
           </div>
         </div>
