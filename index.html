@@ -17,7 +17,7 @@
   <div class="brand">
     <img src="assets/logo.png" alt="Turbo Desktop">
     <span class="name">Turbo Desktop</span>
-    <span class="version">v0.2.3</span>
+    <span class="version">v0.2.4</span>
   </div>
   <div class="spacer"></div>
   <nav>
@@ -248,7 +248,7 @@ npx turbo-desktop dev</pre>
   }
 }</pre>
           </div>
-          <p class="note"><code class="inline">command</code> runs through your login shell on macOS and Linux, so rbenv, asdf, or mise are set up as they would be in a terminal. On Windows it runs through <code class="inline">cmd</code>: use <code class="inline">ruby bin\rails server</code>. <code class="inline">directory</code> is relative to the config file. If something already answers on <code class="inline">server_url</code>, the app uses it and leaves it running on quit; a server the app started is stopped when the app quits.</p>
+          <p class="note"><code class="inline">command</code> runs through your shell on macOS and Linux, started the way a terminal starts it, so rbenv, asdf, nvm, or mise are set up as they are there &mdash; including when they live in <code class="inline">~/.zshrc</code>. On Windows it runs through <code class="inline">cmd</code>: use <code class="inline">ruby bin\rails server</code>. <code class="inline">directory</code> is relative to the config file. If something already answers on <code class="inline">server_url</code>, the app uses it and leaves it running on quit; a server the app started is stopped when the app quits.</p>
 
           <h3>Where the file is read from</h3>
           <div class="tbl tbl-helpers mb">
@@ -348,7 +348,7 @@ npx turbo-desktop dev</pre>
           </div>
 
           <h3>When the server cannot be reached</h3>
-          <p class="note" style="margin:0">The shell starts with rules rather than none. It uses the last copy the server gave, cached on the user's machine; failing that, the copy bundled with the app as <code class="inline">desktop/path-configuration.json</code>; failing both, everything takes the default presentation. The server's copy replaces whichever was loaded as soon as it arrives. Keys the shell does not use are ignored, so one endpoint can serve the mobile shells too.</p>
+          <p class="note" style="margin:0">The shell starts with rules rather than none. It uses the last copy the server gave, cached on the user's machine; failing that, the copy bundled with the app as <code class="inline">desktop/path-configuration.json</code>; failing both, everything takes the default presentation. The server's copy replaces whichever was loaded as soon as it arrives, and is asked for again whenever the server comes back &mdash; which, for an app that starts its own server, is a moment after launch. Keys the shell does not use are ignored, so one endpoint can serve the mobile shells too.</p>
         </section>
 
         <section id="windows">
@@ -474,7 +474,7 @@ if (isTurboDesktop()) {
   console.log(`Running on ${info.platform}`)
 }</pre>
           </div>
-          <p class="note" style="margin:0">The <code class="inline">turbo-desktop.js</code> IIFE is injected into every page by the shell. The npm package only adds types and ESM exports over the same globals &mdash; nothing is bundled twice.</p>
+          <p class="note" style="margin:0">The <code class="inline">turbo-desktop.js</code> IIFE is injected into every page by the shell. The npm package only adds types and ESM exports over the same globals &mdash; nothing is bundled twice. It looks the shell up when it is used, so the same controller runs in a plain browser, where <code class="inline">sendBridge</code> resolves with <code class="inline">null</code>.</p>
         </section>
 
         <section id="files">
@@ -591,7 +591,7 @@ config.inspector_enabled = Rails.env.development?
 
         <section id="rails-gem">
           <h2>Rails gem</h2>
-          <p class="intro">The <code class="inline" style="font-size:13px">turbo_desktop-rails</code> gem gives your app shell awareness. Detection reads the User-Agent, e.g. <code class="inline" style="font-size:12.5px">Turbo Desktop/0.2.3 (macOS; aarch64)</code>.</p>
+          <p class="intro">The <code class="inline" style="font-size:13px">turbo_desktop-rails</code> gem gives your app shell awareness. Detection reads the User-Agent, e.g. <code class="inline" style="font-size:12.5px">Turbo Desktop/0.2.4 (macOS; aarch64)</code>.</p>
 
           <div class="tbl tbl-helpers mb">
             <div class="tbl-head"><div>Helper</div><div>Returns</div></div>
@@ -651,7 +651,8 @@ end</pre>
               <div class="tbl-row"><div class="mono">setTitle(title)</div><div>Update the native window title bar.</div></div>
               <div class="tbl-row"><div class="mono">sendBridgeMessage(component, event, data?)</div><div>Send a bridge message; resolves with the native response or null.</div></div>
               <div class="tbl-row"><div class="mono">getWindowInfo()</div><div>Size, position, scale factor, fullscreen state, platform, and arch.</div></div>
-              <div class="tbl-row"><div class="mono">version / platform / isNative</div><div>The shell's version, the OS, and true inside the shell.</div></div>
+              <div class="tbl-row"><div class="mono">version / platform / isNative</div><div>The shell's version; "macos", "windows", or "linux"; and true inside the shell.</div></div>
+              <div class="tbl-row"><div class="mono">errors / reportVisitError(error, options?)</div><div>The failure vocabulary, and a way to report a failure your app detected itself.</div></div>
               <div class="tbl-row"><div class="mono">isModal / windowLabel</div><div>Whether this page is in a modal, and the window's label.</div></div>
               <div class="tbl-row"><div class="mono">closeModal(label?)</div><div>Close a modal by its label, or the one the page is in.</div></div>
               <div class="tbl-row"><div class="mono">recede() / refresh() / resume()</div><div>Dismiss a modal and go back, reload, or do nothing underneath.</div></div>
