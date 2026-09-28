@@ -119,9 +119,16 @@
           <h2 class="sub">Why it exists</h2>
           <p class="intro" style="margin-bottom:22px">Rails developers have had turbo-ios and turbo-android for years. Desktop was the gap. Turbo Desktop fills it without asking you to learn a new UI framework: your existing views, frames, and controllers keep working, and you reach for native only where it pays off.</p>
 
+          <div class="platforms">
+            <figure><img src="assets/macos.png" alt="The Task Manager example on macOS" loading="lazy"><figcaption>macOS</figcaption></figure>
+            <figure><img src="assets/windows.png" alt="The Task Manager example on Windows 11" loading="lazy"><figcaption>Windows</figcaption></figure>
+            <figure><img src="assets/linux.png" alt="The Task Manager example on Ubuntu" loading="lazy"><figcaption>Linux</figcaption></figure>
+          </div>
+          <p class="note" style="margin:0 0 22px">One Rails app, three shells. The badge in the corner of each window is what Rails was told about the shell it is in.</p>
+
           <div class="card-grid">
             <div class="card"><div class="t">No new UI framework</div><div class="b">Rails views, Turbo Frames, and Stimulus controllers work unchanged.</div></div>
-            <div class="card"><div class="t">5&ndash;10 MB binaries</div><div class="b">Tauri uses the OS WebView. No bundled Chromium to ship.</div></div>
+            <div class="card"><div class="t">Small installers</div><div class="b">Tauri uses the OS WebView, so there is no Chromium to ship: 4 MB on Windows, 9 MB as a .deb, 14 MB as a universal .dmg.</div></div>
             <div class="card"><div class="t">Native where it counts</div><div class="b">Notifications, menus, dialogs, clipboard, shell &amp; sudo, drag &amp; drop, file associations, launch at login &mdash; via the Bridge.</div></div>
             <div class="card"><div class="t">Server-driven routing</div><div class="b">Path configuration is JSON served by Rails &mdash; change it without a rebuild.</div></div>
             <div class="card"><div class="t">Opens like an app</div><div class="b">The shell starts your Rails server on launch and stops it on quit. One icon, not two terminals.</div></div>
@@ -421,10 +428,14 @@ npx turbo-desktop dev</pre>
             <div class="bridge-card"><div class="n">clipboard</div><div class="b">Read and write the system clipboard, no gesture needed</div></div>
             <div class="bridge-card"><div class="n">autostart</div><div class="b">Launch at login, behind a visible toggle</div></div>
             <div class="bridge-card"><div class="n">file-open</div><div class="b">Files opened with the app, even from a cold launch</div></div>
-            <div class="bridge-card"><div class="n">badge</div><div class="b">Dock or taskbar badge count</div></div>
-            <div class="bridge-card"><div class="n">shortcut</div><div class="b">Global keyboard shortcuts</div></div>
-            <div class="bridge-card"><div class="n">updater</div><div class="b">Check for and install app updates</div></div>
+            <div class="bridge-card"><div class="n">deep-link</div><div class="b">The link the app was asked to open, kept until the page is there</div></div>
+            <div class="bridge-card"><div class="n">dialog</div><div class="b">The system's own dialog; what data-turbo-confirm uses</div></div>
+            <div class="bridge-card"><div class="n">badge</div><div class="b">Badge count on the icon, on macOS and Linux</div></div>
+            <div class="bridge-card"><div class="n">shortcut</div><div class="b">Global keyboard shortcuts; on Linux, under X11</div></div>
+            <div class="bridge-card"><div class="n">updater</div><div class="b">Check for and install app updates, once an update server is named</div></div>
+            <div class="bridge-card"><div class="n">devtools</div><div class="b">The webview's developer tools, in development builds</div></div>
           </div>
+          <p class="note" style="margin-top:14px">A component that cannot do its job on the machine it is on answers <code class="inline">status: "unavailable"</code> with the reason, rather than failing. On Windows and Linux a link followed or a file opened while the app is running reaches the window that is already open.</p>
           <p class="note" style="margin-top:14px">Dropped files and OS-opened files also surface as DOM events &mdash; <code class="inline">turbo-desktop:drop</code> and <code class="inline">turbo-desktop:file-open</code> &mdash; so a Stimulus <code class="inline">data-action</code> is all a page needs.</p>
 
           <h3>A notification, end to end</h3>
@@ -462,7 +473,7 @@ export default class extends TurboDesktop.stimulusBridge(Controller, "notificati
 &lt;%= tag.button "Export PDF",
       **turbo_desktop_bridge("menu-item",
         title: "Export PDF",
-        shortcut: "Cmd+E") %&gt;</pre>
+        shortcut: "CmdOrCtrl+E") %&gt;</pre>
           </div>
           <div class="code mb-14" data-panel="br:esm">
             <button class="copy-btn" type="button">copy</button>
@@ -783,9 +794,9 @@ git tag v1.0.0 &amp;&amp; git push origin v1.0.0   # every platform, in CI</pre>
             <div class="tbl-row"><div class="concept">Shell runtime</div><div>WKWebView (Swift)</div><div>WebView (Kotlin)</div><div class="td">Tauri WebView (Rust)</div></div>
             <div class="tbl-row"><div class="concept">Path configuration</div><div>JSON, last-match-wins</div><div>JSON, last-match-wins</div><div class="td">JSON, last-match-wins</div></div>
             <div class="tbl-row"><div class="concept">Native comms</div><div>Strada</div><div>Strada</div><div class="td">BridgeComponent</div></div>
-            <div class="tbl-row"><div class="concept">JS injection</div><div>WKUserScript</div><div>evaluateJavascript</div><div class="td">on_page_load + eval</div></div>
+            <div class="tbl-row"><div class="concept">JS injection</div><div>WKUserScript</div><div>evaluateJavascript</div><div class="td">initialization script</div></div>
             <div class="tbl-row"><div class="concept">Rails gem</div><div>turbo-rails</div><div>turbo-rails</div><div class="td">turbo_desktop-rails</div></div>
-            <div class="tbl-row"><div class="concept">Binary size</div><div>System WebKit</div><div>~20 MB</div><div class="td">~5&ndash;10 MB</div></div>
+            <div class="tbl-row"><div class="concept">Installer size</div><div>System WebKit</div><div>~20 MB</div><div class="td">4&ndash;14 MB</div></div>
             <div class="tbl-row"><div class="concept">Platforms</div><div>iOS, iPadOS</div><div>Android</div><div class="td">macOS, Windows, Linux</div></div>
           </div>
 
